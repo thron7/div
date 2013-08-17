@@ -20,7 +20,6 @@ def curryN(fun, arg, val):
     kwargs = dict([(arg,val)])
     def f(*args, **akwargs):
         akwargs.update(kwargs)
-        print(args, akwargs)
         return fun(*args, **akwargs)
     return f
 
