@@ -19,8 +19,8 @@ def omit(map_, *keys):
 def curryN(fun, arg, val):
     kwargs = dict([(arg,val)])
     def f(*args, **akwargs):
-        akwargs.update(kwargs)
-        return fun(*args, **akwargs)
+        kwargs.update(akwargs)
+        return fun(*args, **kwargs)
     return f
 
 
