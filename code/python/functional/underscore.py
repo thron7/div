@@ -23,4 +23,9 @@ def curryN(fun, arg, val):
         return fun(*args, **kwargs)
     return f
 
+import functools
+def pipeline(seed, *args):
+    return functools.reduce(lambda accu,elem: elem(accu),
+        args, seed)
+
 
