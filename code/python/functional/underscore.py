@@ -48,6 +48,8 @@ def curry3(fun, arg3):
 
 
 # Pipeline - compose functions where one takes the return value of the previous
+# Returns immediately, so pot. wrap in a function over seed:
+# f = lambda seed: pipeline(seed, op1, op2)
 def pipeline(seed, *funcs):
     return functools.reduce(lambda accu,func: func(accu),
         funcs, seed)
@@ -62,6 +64,7 @@ bind = functools.partial
 # { 'values' : [] - growing list of individual action results
 #   'state'  : <val> - carries the cumulative result
 # }
+# Returns callable.
 # Example:
 # actions([lambda x:{'answer':x*x,'state':x*x}], lambda x,y:y)(2)  # => 4
 def actions(acts, done):
