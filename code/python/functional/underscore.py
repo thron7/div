@@ -16,6 +16,7 @@ def omit(map_, *keys):
 #     print a,b,c
 # f1 = curryN(foo,'b',2)
 # f1(1,c=3) # args *before* curried can still be positional
+# Caveat: functools.partial does this and better
 def curryN(fun, arg, val):
     kwargs = dict([(arg,val)])
     def f(*args, **akwargs):
@@ -25,9 +26,9 @@ def curryN(fun, arg, val):
 
 # Pipeline - compose functions where one takes the return value of the previous
 import functools
-def pipeline(seed, *args):
-    return functools.reduce(lambda accu,elem: elem(accu),
-        args, seed)
+def pipeline(seed, *funcs):
+    return functools.reduce(lambda accu,func: func(accu),
+        funcs, seed)
 
 # Actions - compose functions that take different 'shapes' as inputs
 # @param acts[] - list of action functions
