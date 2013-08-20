@@ -37,3 +37,20 @@ a = actions([
     )
 
 #a([l1,l2,[]])
+
+# The same problem, addressed with a pipeline
+# (The original problem was:
+# os.path.join(os.path.dirname(a), os.path.basename(b)))
+
+a1 = lambda l1, l2 : pipeline(
+        l1
+        ,first
+        ,bind(bind, cat)              # => cat(first(l1), _), uncalled
+        ,curry2(apply, (second(l2),)) # => call(cat, first(l1), second(l2)), uncalled
+        ,apply
+        )
+
+# The pipeline version requires far less adaptor code, but has some ugly
+# higher-order expressions ("bind(bind...", "curry2(apply...").
+
+#a1(l1, l2)

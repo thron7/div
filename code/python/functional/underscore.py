@@ -2,6 +2,8 @@
 
 # Functions inspired by underscore.js/"Functional JavaScript" (Fogus)
 
+import functools
+
 # Pick submap
 def pick(map_, *keys):
     return dict((k,v) for k,v in map_.items() if k in keys)
@@ -24,11 +26,34 @@ def curryN(fun, arg, val):
         return fun(*args, **kwargs)
     return f
 
+# Curry2 - curry second to first argument
+# (In contrast to e.g. Fogus,96, providing the first argument doesn't call the
+# original function, but returns a fully bound closure ("thunk").)
+def curry2(fun, arg2):
+    def curry2_f(arg1):
+        def curry1_f(*args, **kwargs):
+            return fun(*((arg1, arg2)+args), **kwargs)
+        return curry1_f
+    return curry2_f
+
+# Curry3 - curry third to first argument
+def curry3(fun, arg3):
+    def curry3_f(arg2):
+        def curry2_f(arg1):
+            def curry1_f(*args, **kwargs):
+                return fun(*((arg1, arg2, arg3)+args), **kwargs)
+            return curry1_f
+        return curry2_f
+    return curry3_f
+
+
 # Pipeline - compose functions where one takes the return value of the previous
-import functools
 def pipeline(seed, *funcs):
     return functools.reduce(lambda accu,func: func(accu),
         funcs, seed)
+
+# Bind - alias for 'partial'
+bind = functools.partial
 
 # Actions - compose functions that take different 'shapes' as inputs
 # @param acts[] - list of action functions
