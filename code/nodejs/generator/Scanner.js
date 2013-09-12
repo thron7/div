@@ -52,14 +52,16 @@ function Scanner() {
     var match, tok_type, source;
     while(true) {
       tok = {};
-      match = this.patt.exec(stream);
+      match = this.patt.xexec(stream);
       if (match===null)
         break;
       else {
+        //debugger;
+        console.log(Object.keys(match))
         tok_type = 'foo'; // TODO
         source = match[0];
         tok = [tok_type, source, match.index, source.length];
-        toks.push(tok);
+        //toks.push(tok);
       }
     }
     return toks;
