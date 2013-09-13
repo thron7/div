@@ -15,7 +15,13 @@ function Scanner() {
         '|(?<hexnum> 0x[0-9A-Fa-f]+)  # hex number \n' +
         '|(?<number> \\d+)       # number  TODO: there is no such thing in JS! \n' +
         '|(?<ident>  [$\\w]+)    # identifier, name \n' +
+        '|(?<nl>  \\n            # unicode line separators \n' +
+                ') \n' +
         /*
+                '\x0D\x0A \n' +
+                '|\x0A \n' +
+                '|\x0D \n' +
+                ') \n' +
         '|(?<nl>                # unicode line separators \n' +
                 '\x0D\x0A \n' +
                 '#|\x20\x28      # strange: this is " (" !? \n' +
@@ -23,29 +29,34 @@ function Scanner() {
                 '|\x0A \n' +
                 '|\x0D \n' +
                 ') \n' +
+        */
+        '|(?<white> (?:(?:\\s|\\ufeff))+)     # white ( + BOM - \\n) \n' +
+        /*
         '|(?<white> (?:(?:\s|\ufeff)(?<!\n))+)     # white ( + BOM - \n) \n' +
+        */
         '|(?<mulop>         # multi-char operators \n' +
                 '<<=?           # <<, <<= \n' +
                 '|>=             # >=\n' +
                 '|<=             # <=\n' +
                 '|===?           # ==, ===\n' +
                 '|!==?           # !=, !==\n' +
-                '|[-+*\/%|^&]=    # -=, +=, *=, /=, %=, |=, ^=, &=\n' +
+                '|[-+*\\/%|^&]=    # -=, +=, *=, /=, %=, |=, ^=, &=\n' +
                 '|>>>?=?         # >>, >>>, >>=, >>>=\n' +
                 '|&&             # &&\n' +
-                '|[|^]\|         # ||, ^|\n' +
-                '|\+\+           # ++\n' +
+                '|[|^]\\|         # ||, ^|\n' +
+                '|\\+\\+           # ++\n' +
                 '|--             # --\n' +
                 '|::             # ::\n' +
-                '|\.\.           # ..\n' +
+                '|\\.\\.           # ..\n' +
                 '|//             # /\/ (end-of-line comment)\n' +
-                '|/\*            # /\* (start multi-line comment)\n' +
-                '|\*\/            # *\/ (end multi-line comment)\n' +
+                '|/\\*            # /\* (start multi-line comment)\n' +
+                '|\\*\\/            # *\/ (end multi-line comment)\n' +
                 ')\n' +
-        '|(?<op> \W)            # what remains (operators)\n' +
+        '|(?<op> \\W)            # what remains (operators)\n' +
+        /*
         '#, re.VERBOSE|re.DOTALL|re.MULTILINE|re.UNICODE) # re.LOCALE?!\n' +
         */
-        '', 'xgm'
+        '', 'xsgm'
   );
 
   this.tokenize = function(stream) {
@@ -54,21 +65,13 @@ function Scanner() {
     var match, tok_type, source;
     var mgroups = match_groups(this.patt);
 
-    /*
-    while(true) {
-      match = this.patt.xexec(stream);
-      if (match===null)
-        break;
-      else {
-    */
     this.patt.forEach(stream, function(match) {
-        tok_type = mgroup(match, mgroups, 1)[0];
-        source = match[0];
-        tok = [tok_type, source, match.index, source.length];
-        toks.push(tok);
-      }
-    //}
-    , this);
+      tok_type = mgroup(match, mgroups, 1)[0];
+      source = match[0];
+      tok = [tok_type, source, match.index, source.length];
+      toks.push(tok);
+    } , this);
+
     return toks;
   }
 }
