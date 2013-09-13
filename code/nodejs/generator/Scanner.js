@@ -2,6 +2,7 @@
 
 var fs = require('fs');
 var XRegExp = require('xregexp').XRegExp;
+var _ = require('underscore');
 
 function Scanner() {
 
@@ -48,22 +49,26 @@ function Scanner() {
   );
 
   this.tokenize = function(stream) {
+
     var tok, toks = [];
     var match, tok_type, source;
+    var mgroups = match_groups(this.patt);
+
+    /*
     while(true) {
-      tok = {};
       match = this.patt.xexec(stream);
       if (match===null)
         break;
       else {
-        //debugger;
-        console.log(Object.keys(match))
-        tok_type = 'foo'; // TODO
+    */
+    this.patt.forEach(stream, function(match) {
+        tok_type = mgroup(match, mgroups, 1)[0];
         source = match[0];
         tok = [tok_type, source, match.index, source.length];
-        //toks.push(tok);
+        toks.push(tok);
       }
-    }
+    //}
+    , this);
     return toks;
   }
 }
@@ -77,6 +82,38 @@ function main(fcont) {
   tokens.forEach(function (e) {
     console.log(e);
   });
+}
+
+function mgroup(mo, keys, i) {
+  return map_select(mo, keys)[i-1];
+}
+
+/**
+ * {} -> [[key,val]]  where defined(val)
+ */
+function map_select(obj, keys) {
+  var res = [];
+  keys.forEach(function (key) {
+    if (defined(obj[key]))
+      res.push([key, obj.key]);
+  });
+  return res;
+}
+
+function first(a) {
+  return a[0];
+}
+
+function defined(x) {
+    return !undef(x);
+}
+
+function undef(x) {
+  return (typeof(x) == 'undefined');
+}
+
+function match_groups(xreg) {
+  return xreg.xregexp.captureNames;
 }
 
 /*
