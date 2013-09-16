@@ -67,8 +67,18 @@ function expression(bpright) {
     return left;
 }
 
+function space() {
+    return ' ';
+}
+
 // Helpers
 function identity () { return this; }
+function affix_comments(node1_list, node2) {
+    node2.comments.forEach( function (e) {
+        node1_list.push(e);
+    }
+}
+
 
 function infix(id_, bp) {
     function ifix(left) {
@@ -154,7 +164,7 @@ function prefix(id_, bp) {
 ////;
 // prefix "verb" operators, i.e. that need a space before their operand like 'delete';
 function prefix_v(id_, bp) {
-    prefix(id_, bp)  // init as prefix op;
+    prefix(id_, bp);  // init as prefix op;
 
     function toJS) {
         r = '';
@@ -164,17 +174,15 @@ function prefix_v(id_, bp) {
         return r;
     }
     symbol(id_).toJS = toJS;
-}
-
 
 function preinfix(id_, bp) {  // pre-/infix operators (+, -);
-    infix(id_, bp)   // init as infix op;
+    infix(id_, bp);   // init as infix op;
 
     ////;
     // give them a pfix() for prefix pos;
     function pfix() {
-        this.set("left", "true")  // mark prefix position;
-        this.childappend(expression(130)) // need to use prefix rbp!;
+        this.set("left", "true");  // mark prefix position;
+        this.childappend(expression(130)); // need to use prefix rbp!;
         return this;
     }
     symbol(id_).pfix = pfix;
@@ -201,7 +209,7 @@ function preinfix(id_, bp) {  // pre-/infix operators (+, -);
         } else {
             r = [this.children[0].toListG(), [this], this.children[1].toListG()];
         }
-        for (var e in _chain(*r)
+        _chain(*r.forEach(function (e) {
             return e;
     }
     symbol(id_).toListG = toListG;
@@ -215,7 +223,7 @@ function prepostfix(id_, bp) {  // pre-/post-fix operators (++, --);
     }
     symbol(id_, bp).pfix = pfix;
 
-    function ifixleft) { // postfix;
+    function ifix(left) { // postfix;
         // assert(left, lval);
         this.childappend(left);
         return this;
@@ -247,7 +255,7 @@ function prepostfix(id_, bp) {  // pre-/post-fix operators (++, --);
 }
 
 
-function advance(id_=None) {
+function advance(id_=undefined) {
     id_ = id_ || null;
     var t = token;
     if (id_ && token.id != id_)
@@ -366,6 +374,7 @@ symbol("?").ifix = function (left) {
     // third;
     this.childappend(expression(symbol(",").bind_left +1));
     return this;
+}
 
 
 symbol("?").toJS = function () {
@@ -402,7 +411,8 @@ symbol("?").toListG = function () {
 symbol(".").ifix = function (left) {
     if (token.id != "identifier") {
         throw new Error("Expected an attribute name (pos %r)." % ((token.get("line"), token.get("column")),));
-    accessor = symbol("dotaccessor")(token.get("line"), token.get("column"));
+    }
+    accessor = new symbol("dotaccessor")(token.get("line"), token.get("column"));
     accessor.childappend(left);
     accessor.childappend(expression(symbol(".").bind_left)) ;
         // i'm providing the rbp to expression() here explicitly, so "foo.bar(baz)" gets parsed;
@@ -419,36 +429,41 @@ symbol("dotaccessor").toJS = function () {
     r += '.';
     r += this.children[1].toJS();
     return r;
+}
 
 symbol("dotaccessor").toListG = function () {
-    for (var e in _chain(this.children[0].toListG(), [this], this.children[1].toListG()))
+    _chain(this.children[0].toListG(.forEach(function (e) {, [this], this.children[1].toListG()))
         return e;
+}
 
 ////;
 // walk down to find the "left-most" identifier ('a' in 'a.b().c');
-symbol("dotaccessor"));
-def getLeftmostOperand():;
+symbol("dotaccessor").getLeftmostOperand = function () {
     ident = this.children[0];
     while (ident.type not in ("identifier", "constant")) {  // e.g. 'dotaccessor', 'first', 'call', 'accessor', ...;
         ident =ident.children[0];
+    }
     return ident;
+}
 
 ////;
 // walk down to find the "right-most" identifier ('c' in a.b.c);
-symbol("dotaccessor"));
-def getRightmostOperand():;
+symbol("dotaccessor").getRightmostOperand = function () {
     ident = this.children[1];
     return ident // "left-leaning" syntax tree (. (. a b) c);
+}
 
 // constants;
 
-def constant(id_):;
+function constant(id_) {
     symbol(id_));
-    .pfix = function () {
+    symbol("constant").pfix = function () {
         this.id = "constant";
         this.value = id_;
         return this;
+    }
     symbol(id_).toListG = toListG_self_first;
+}
 
 constant("null");
 constant("true");
@@ -458,31 +473,34 @@ constant("false");
 
 symbol("("), symbol(")"), symbol("arguments");
 
-symbol("("))  // <call.ifix = function (left) {
-    call = symbol("call")(token.get("line"), token.get("column"));
+symbol("(")).ifix = function (left) {  // <call
+    call = new symbol("call")(token.get("line"), token.get("column"));
     // operand;
-    operand = symbol("operand")(token.get("line"), token.get("column"));
+    operand = new symbol("operand")(token.get("line"), token.get("column"));
     call.childappend(operand);
     operand.childappend(left);
     // params - parse as group;
-    params = symbol("arguments")(token.get("line"), token.get("column"));
+    params = new symbol("arguments")(token.get("line"), token.get("column"));
     call.childappend(params);
     group = this.pfix();
-    for (var c in group.children)
+    group.children.forEach(function (c) {
         params.childappend(c);
     return call;
+}
 
 symbol("operand");
 
 symbol("operand").toJS = function () {
     return this.children[0].toJS();
+}
 
 symbol("operand").toListG = function () {
-    for (var e in this.children[0].toListG())
+    this.children[0].toListG().forEach(function (e) {
         return e;
+}
 
 
-symbol("("))  // <group.pfix = function () {
+symbol("(")).pfix = function () {  // <group
     // There is sometimes a one-to-one replacement of the symbol instance from;
     // <token> && a different symbol created in the parsing method (here;
     // "symbol-(" vs. "symbol-group"). But there are a lot of attributes you want to;
@@ -491,78 +509,92 @@ symbol("("))  // <group.pfix = function () {
     // more specific (as here "(" which could be "group", "call" etc.). Just;
     // re-writing .type would be enough for most tree traversing routines. But;
     // the parsing methods themselves are class-based.;
-    group = symbol("group")();
-    this.patch(group) // for "line", "column", .comments, etc.;
+    group = new symbol("group")();
+    ////this.patch(group) // for "line", "column", .comments, etc.;
     if (token.id != ")") {
-        while (True) {
+        while (true) {
             if (token.id == ")") {
                 break;
+            }
             //group.childappend(expression())  // future:;
             group.childappend(expression(symbol(",").bind_left +1));
             if (token.id != ",") {
                 break;
+            }
             advance(",");
+        }
+    }
     //if (not group.children) {  // bug//7079;
     //    raisenew Error("Empty expressions in groups are not allowed", token);
     advance(")");
     return group;
+}
 
 symbol("group").toJS = function () {
     r = [];
     r.push('(');
     a = [];
-    for (var c in this.children)
+    this.children.forEach(function (c) {
         a.push(c.toJS());
-    a.join(r.push(','));
+    }
+    r.push(a.join(','));
     r.push(')');
     return r.join('');
+}
 
 symbol("group").toListG = function () {
     for (var e in _chain([this], [c.toListG() for c in this.children)
         return e;
+}
 
 
 symbol("]");
 
 symbol("[").ifix = function (left) {             // "foo[0]", "foo[bar]", "foo['baz'];
-    accessor = symbol("accessor")();
-    this.patch(accessor);
+    accessor = new symbol("accessor")();
+    //this.patch(accessor);
     // identifier;
     accessor.childappend(left);
     // selector;
-    key = symbol("key")(token.get("line"), token.get("column"));
+    key = new symbol("key")(token.get("line"), token.get("column"));
     accessor.childappend(key);
     key.childappend(expression());
     // assert token.id == ']';
     affix_comments(key.commentsAfter, token);
     advance("]");
     return accessor;
+}
 
 symbol("["))             // arrays, "[1, 2, 3].pfix = function () {
-    arr = symbol("array")();
-    this.patch(arr);
+    arr = new symbol("array")();
+    ////this.patch(arr);
     is_after_comma = 0;
-    while (True) {
+    while (true) {
         if (token.id == "]") {
             if (is_after_comma) {  // preserve dangling comma (bug//6210);
-                arr.childappend(symbol("(empty)")());
+                arr.childappend(new symbol("(empty)")());
+            }
             if (arr.children) {
                 affix_comments(arr.children[-1].commentsAfter, token);
             } else {
                 affix_comments(arr.commentsIn, token);
+            }
             break;
-        elif token.id == ",":  // elision;
-            arr.childappend(symbol("(empty)")());
+        else if (token.id == ",") {  // elision;
+            arr.childappend(new symbol("(empty)")());
         } else {
             //arr.childappend(expression())  // future: ;
             arr.childappend(expression(symbol(",").bind_left +1));
+        }
         if (token.id != ",") {
             break;
         } else {
             is_after_comma = 1;
             advance(",");
+        }
     advance("]");
     return arr;
+}
 
 symbol("accessor");
 
@@ -573,17 +605,20 @@ symbol("accessor").toJS = function () {
     r += this.children[1].toJS();
     r += ']';
     return r;
+}
 
 symbol("accessor").toListG = function () {
-    for (var e in _chain(this.children[0].toListG(), [this], this.children[1].toListG)
+    _.chain(this.children[0].toListG(.forEach(function (e) {, [this], this.children[1].toListG)
         return e;
+    }
+}
 
 
 symbol("array");
 
 symbol("array").toJS = function () {
     r = [];
-    for (var c in this.children)
+    this.children.forEach(function (c) {
         r.push(c.toJS());
     return '[' + r.join(',') + ']';
 
@@ -596,24 +631,24 @@ symbol("key").toJS = function () {
     return this.children[0].toJS();
 
 symbol("key").toListG = function () {
-    for (var e in this.children[0].toListG)
+    this.children[0].toListG.forEach(function (e) {
         return e;
 
 
 symbol("}");
 
 symbol("{"))                    // object literal.pfix = function () {
-    mmap = symbol("map")();
-    this.patch(mmap);
+    mmap = new symbol("map")();
+    //this.patch(mmap);
     if (token.id != "}") {
         is_after_comma = 0;
-        while (True) {
+        while (true) {
             if (token.id == "}") {
                 if (is_after_comma) {  // prevent dangling comma '...,}' (bug//6210);
                     throw new Error("Illegal dangling comma in map (pos %r)" % ((token.get("line"),token.get("column")),));
                 break;
             is_after_comma = 0;
-            map_item = symbol("keyvalue")(token.get("line"), token.get("column"));
+            map_item = new symbol("keyvalue")(token.get("line"), token.get("column"));
             mmap.childappend(map_item);
             // key;
             keyname = token;
@@ -623,14 +658,14 @@ symbol("{"))                    // object literal.pfix = function () {
             advance();
             // the <keyname> node is not entered into the ast, but resolved into <keyvalue>;
             map_item.set("key", keyname.get("value"));
-            quote_type = keyname.get("detail", False);
+            quote_type = keyname.get("detail", false);
             map_item.set("quote", quote_type if quote_type else '');
             map_item.comments = keyname.comments;
             advance(":");
             // value;
             //keyval = expression()  // future: ;
             keyval = expression(symbol(",").bind_left +1);
-            val = symbol("value")(token.get("line"), token.get("column"));
+            val = new symbol("value")(token.get("line"), token.get("column"));
             val.childappend(keyval);
             map_item.childappend(val)  // <value> is a child of <keyvalue>;
             if (token.id != ",") {
@@ -642,7 +677,7 @@ symbol("{"))                    // object literal.pfix = function () {
     return mmap;
 
 symbol("{"))                    // blocks;
-def std():;
+function std() {
     a = statements();
     advance("}");
     return a;
@@ -653,7 +688,7 @@ symbol("map").toJS = function () {
     r = '';
     r += this.write("{");
     a = [];
-    for (var c in this.children)
+    this.children.forEach(function (c) {
         a.push(c.toJS());
     r += a.join(',');
     r += this.write("}");
@@ -667,7 +702,7 @@ symbol("value").toJS = function () {
     return this.children[0].toJS();
 
 symbol("value").toListG = function () {
-    for (var e in this.children[0].toListG)
+    this.children[0].toListG.forEach(function (e) {
         return e;
 
 symbol("keyvalue");
@@ -697,10 +732,10 @@ symbol("keyvalue").toListG = function () {
 // The next is a shallow wrapper around "{".std, to have a more explicit rule to;
 // call for constructs that have blocks, like "for", "while", etc.;
 
-def block():;
+function block() {
     t = token;
     advance("{");
-    s = symbol("block")();
+    s = new symbol("block")();
     t.patch(s);
     s.childappend(t.std())  // the "{".std takes care of closing "}";
     return s;
@@ -722,7 +757,7 @@ symbol("function");
 
 symbol("function").pfix = function () {
     // optional name;
-    opt_name = None;
+    opt_name = undefined;
     if (token.id == "identifier") {
         //this.childappend(token.get("value"));
         //this.childappend(token);
@@ -731,15 +766,15 @@ symbol("function").pfix = function () {
         advance();
     // params;
     assert token.id == "(", "Function definition requires parameter list";
-    params = symbol("params")();
+    params = new symbol("params")();
     token.patch(params);
     this.childappend(params);
     group = expression()  // group parsing as helper;
-    for (var c in group.children)
+    group.children.forEach(function (c) {
         params.childappend(c);
     //params.children = group.children retains group as parent!;
     // body;
-    body = symbol("body")();
+    body = new symbol("body")();
     token.patch(body);
     this.childappend(body);
     if (token.id == "{") {
@@ -770,7 +805,7 @@ symbol("function").toListG = function () {
     r = [];
     r.push('(');
     a = [];
-    for (var c in this.children)
+    this.children.forEach(function (c) {
         a.push(c.toJS());
     a.join(r.push(','));
     r.push(')');
@@ -800,8 +835,8 @@ symbol("body").toListG = function () {
 symbol("var");
 
 symbol("var").pfix = function () {
-    while (True) {
-        defn = symbol("definition")(token.get("line"), token.get("column"));
+    while (true) {
+        defn = new symbol("definition")(token.get("line"), token.get("column"));
         this.childappend(defn);
         n = token;
         if (n.id != "identifier") {
@@ -827,7 +862,7 @@ symbol("var").toJS = function () {
     r.push("var");
     r.push(this.space());
     a = [];
-    for (var c in this.children)
+    this.children.forEach(function (c) {
         a.push(c.toJS());
     a.join(r.push(','));
     return r.join('');
@@ -847,11 +882,11 @@ symbol("definition").toListG = function () {
 // returns the identifier node of the defined symbol;
 //;
 symbol("definition"));
-def getDefinee():;
+function getDefinee() {
     dfn = this.children[0]  // (definition (identifier a)) or (definition (assignment (identifier a)(const 3)));
     if (dfn.type == "identifier") {
         return dfn;
-    elif dfn.type == "assignment":;
+    else if (dfn.type == "assignment") {;
         return dfn.children[0];
     } else {
         throw SyntaxTreeError("Child of a 'definition' symbol must be in ('identifier', 'assignment')");
@@ -860,17 +895,17 @@ def getDefinee():;
 // returns the initialization of the defined symbol, if any;
 //;
 symbol("definition"));
-def getInitialization():;
+function getInitialization() {
     dfn = this.children[0];
     if (dfn.type == "assignment") {
         return dfn.children[1];
     } else {
-        return None;
+        return undefined;
 
 symbol("for"); symbol("in");
 
 symbol("for"));
-def std():;
+function std() {
     this.type = "loop" // compat with Node.type;
     this.set("loopType", "FOR");
     ;
@@ -880,7 +915,7 @@ def std():;
     if (token.id != ";") {
         chunk = expression();
     } else {
-        chunk = None;
+        chunk = undefined;
 
     // for (in);
     if (chunk && chunk.id == 'in') {
@@ -890,25 +925,25 @@ def std():;
     // for (;;) [mind: all three subexpressions are optional];
     } else {
         this.set("forVariant", "iter");
-        condition = symbol("expressionList")(token.get("line"), token.get("column")) // TODO: expressionList is bogus here;
+        condition = new symbol("expressionList")(token.get("line"), token.get("column")) // TODO: expressionList is bogus here;
         this.childappend(condition);
         // init part;
-        first = symbol("first")(token.get("line"), token.get("column"));
+        first = new symbol("first")(token.get("line"), token.get("column"));
         condition.childappend(first);
-        if (chunk is None) {       // empty init expr;
+        if (chunk is undefined) {       // empty init expr;
             pass;
         } else { // at least one init expr;
-            exprList = symbol("expressionList")(token.get("line"), token.get("column"));
+            exprList = new symbol("expressionList")(token.get("line"), token.get("column"));
             first.childappend(exprList);
             exprList.childappend(chunk);
             if (token.id == ',') {
                 advance(',');
                 lst = init_list();
-                for (var assgn in lst)
+                lst.forEach(function (assgn) {
                     exprList.childappend(assgn);
-        //elif token.id == ';':   // single init expr;
+        //else if (token.id == ';') {   // single init expr;
         //    first.childappend(chunk);
-        //elif token.id == ',':   // multiple init expr;
+        //else if (token.id == ',') {   // multiple init expr;
         //    advance();
         //    exprList = symbol("expressionList")(token.get("line"), token.get("column"));
         //    first.childappend(exprList);
@@ -918,10 +953,10 @@ def std():;
         //        exprList.childappend(assgn);
         advance(";");
         // condition part ;
-        second = symbol("second")(token.get("line"), token.get("column"));
+        second = new symbol("second")(token.get("line"), token.get("column"));
         condition.childappend(second);
         if (token.id != ";") {
-            exprList = symbol("expressionList")(token.get("line"), token.get("column"));
+            exprList = new symbol("expressionList")(token.get("line"), token.get("column"));
             second.childappend(exprList);
             while (token.id != ';') {
                 expr = expression(0);
@@ -930,10 +965,10 @@ def std():;
                     advance(',');
         advance(";");
         // update part;
-        third = symbol("third")(token.get("line"), token.get("column"));
+        third = new symbol("third")(token.get("line"), token.get("column"));
         condition.childappend(third);
         if (token.id != ")") {
-            exprList = symbol("expressionList")(token.get("line"), token.get("column"));
+            exprList = new symbol("expressionList")(token.get("line"), token.get("column"));
             third.childappend(exprList);
             while (token.id != ')') {
                 expr = expression(0);
@@ -943,7 +978,7 @@ def std():;
 
     // body;
     advance(")");
-    body = symbol("body")(token.get("line"), token.get("column"));
+    body = new symbol("body")(token.get("line"), token.get("column"));
     body.childappend(statementOrBlock());
     this.childappend(body);
     return this;
@@ -951,7 +986,7 @@ def std():;
 symbol("for").toJS = function () {
     r = [];
     r.push('for');
-    r.push(this.space(False,result=r));
+    r.push(this.space(false,result=r));
     // cond;
     r.push('(');
     // for (in);
@@ -983,13 +1018,13 @@ symbol("in").toJS = function () {  // of 'for (in);
     return r;
 
 symbol("in").toListG = function () {
-    for (var e in _chain(this.children[0].toListG(), [this], this.children[1].toListG)
+    _chain(this.children[0].toListG(.forEach(function (e) {, [this], this.children[1].toListG)
         return e;
 
 
 symbol("expressionList").toJS:  // WARN = function () { this conflicts (and is overwritten) in for(;;).toJS;
     r = [];
-    for (var c in this.children)
+    this.children.forEach(function (c) {
         r.push(c.toJS());
     return r.join(',');
 
@@ -1001,16 +1036,16 @@ symbol("expressionList").toListG = function () {
 symbol("while");
 
 symbol("while"));
-def std():;
+function std() {
     this.type = "loop" // compat with Node.type;
     this.set("loopType", "WHILE");
     t = advance("(");
     group = t.pfix()  // group parsing eats ")";
-    exprList = symbol("expressionList")(t.get("line"),t.get("column"));
+    exprList = new symbol("expressionList")(t.get("line"),t.get("column"));
     this.childappend(exprList);
-    for (var c in group.children)
+    group.children.forEach(function (c) {
         exprList.childappend(c);
-    body = symbol("body")(token.get("line"), token.get("column"));
+    body = new symbol("body")(token.get("line"), token.get("column"));
     body.childappend(statementOrBlock());
     this.childappend(body);
     return this;
@@ -1018,7 +1053,7 @@ def std():;
 symbol("while").toJS = function () {
     r = '';
     r += this.write("while");
-    r += this.space(False,result=r);
+    r += this.space(false,result=r);
     // cond;
     r += '(';
     r += this.children[0].toJS();
@@ -1034,10 +1069,10 @@ symbol("while").toListG = function () {
 symbol("do");
 
 symbol("do"));
-def std():;
+function std() {
     this.type = "loop" // compat with Node.type;
     this.set("loopType", "DO");
-    body = symbol("body")(token.get("line"), token.get("column"));
+    body = new symbol("body")(token.get("line"), token.get("column"));
     body.childappend(statementOrBlock());
     this.childappend(body);
     advance("while");
@@ -1065,13 +1100,13 @@ symbol("do").toListG = function () {
 symbol("with");
 
 symbol("with"));
-def std():;
+function std() {
     this.type = "loop" // compat. with Node.type;
     this.set("loopType", "WITH");
     advance("(");
     this.childappend(expression(0));
     advance(")");
-    body = symbol("body")(token.get("line"), token.get("column"));
+    body = new symbol("body")(token.get("line"), token.get("column"));
     body.childappend(statementOrBlock());
     this.childappend(body);
     return this;
@@ -1133,13 +1168,13 @@ symbol("if").std = function () {
 .toJS = function () {
     r = '';
     // Additional new line before each loop;
-    if (not this.isFirstChild(True) && not this.getChild("commentsBefore", False)) {
-        prev = this.getPreviousSibling(False, True);
+    if (not this.isFirstChild(true) && not this.getChild("commentsBefore", false)) {
+        prev = this.getPreviousSibling(false, true);
 
         // No separation after case statements;
-        //if (prev != None && prev.type in ["case", "default"]) {
+        //if (prev != undefined && prev.type in ["case", "default"]) {
         //    pass;
-        //elif this.hasChild("elseStatement") or this.getChild("statement").hasBlockChildren():;
+        //else if (this.hasChild("elseStatement") or this.getChild("statement").hasBlockChildren()) {;
         //    this.sep();
         //} else {
         //    this.line();
@@ -1155,7 +1190,7 @@ symbol("if").std = function () {
         r += this.write("else");
         r += this.space();
         r += this.children[2].toJS();
-    r += this.space(False,result=r);
+    r += this.space(false,result=r);
     return r;
 
 symbol("if").toListG = function () {
@@ -1169,13 +1204,13 @@ symbol("loop");
 symbol("loop").toJS = function () {
     r = '';
     // Additional new line before each loop;
-    if (not this.isFirstChild(True) && not this.getChild("commentsBefore", False)) {
-        prev = this.getPreviousSibling(False, True);
+    if (not this.isFirstChild(true) && not this.getChild("commentsBefore", false)) {
+        prev = this.getPreviousSibling(false, true);
 
         // No separation after case statements;
-        if (prev != None && prev.type in ["case", "default"]) {
+        if (prev != undefined && prev.type in ["case", "default"]) {
             pass;
-        elif this.hasChild("elseStatement") or this.getChild("statement").hasBlockChildren():;
+        else if (this.hasChild("elseStatement") or this.getChild("statement").hasBlockChildren()) {;
             this.sep();
         } else {
             this.line();
@@ -1185,21 +1220,21 @@ symbol("loop").toJS = function () {
     if (loopType == "IF") {
         pass;
 
-    elif loopType == "WHILE":;
+    else if (loopType == "WHILE") {;
         r += this.write("while");
-        r += this.space(False,result=r);
+        r += this.space(false,result=r);
 
-    elif loopType == "FOR":;
+    else if (loopType == "FOR") {;
         r += this.write("for");
-        r += this.space(False,result=r);
+        r += this.space(false,result=r);
 
-    elif loopType == "DO":;
+    else if (loopType == "DO") {;
         r += this.write("do");
-        r += this.space(False,result=r);
+        r += this.space(false,result=r);
 
-    elif loopType == "WITH":;
+    else if (loopType == "WITH") {;
         r += this.write("with");
-        r += this.space(False,result=r);
+        r += this.space(false,result=r);
 
     } else {
         print "Warning: Unknown loop type: %s" % loopType;
@@ -1209,7 +1244,7 @@ symbol("loop").toJS = function () {
 symbol("break");
 
 symbol("break"));
-def std():;
+function std() {
     //if (token.id not in StmntTerminatorTokens) {
     if (not expressionTerminated()) {
         this.childappend(expression(0))   // this is over-generating! (should be 'label');
@@ -1231,7 +1266,7 @@ symbol("break").toListG = function () {
 symbol("continue");
 
 symbol("continue"));
-def std():;
+function std() {
     //if (token.id not in StmntTerminatorTokens) {
     if (not expressionTerminated()) {
         this.childappend(expression(0))   // this is over-generating! (should be 'label');
@@ -1253,7 +1288,7 @@ symbol("continue").toListG = function () {
 symbol("return");
 
 symbol("return"));
-def std():;
+function std() {
     //if (token.id not in StmntTerminatorTokens) {
     if (not expressionTerminated()) {
         this.childappend(expression(0));
@@ -1286,16 +1321,16 @@ symbol("new").toListG = toListG_self_first;
 symbol("switch"); symbol("case"); symbol("default");
 
 symbol("switch"));
-def std():;
+function std() {
     advance("(");
     this.childappend(expression(0));
     advance(")");
     advance("{");
-    body = symbol("body")(token.get("line"), token.get("column"));
+    body = new symbol("body")(token.get("line"), token.get("column"));
     this.childappend(body);
-    while (True) {
+    while (true) {
         if (token.id == "}") { break;
-        elif token.id == "case":;
+        else if (token.id == "case") {;
             case = token  // make 'case' the root node (instead e.g. ':');
             advance("case");
             case.childappend(expression(symbol(":").bind_left +1));
@@ -1304,7 +1339,7 @@ def std():;
                 pass;
             } else {
                 case.childappend(case_block());
-        elif token.id == "default":;
+        else if (token.id == "default") {;
             case = token;
             advance("default");
             advance(":");
@@ -1316,10 +1351,10 @@ def std():;
     advance("}");
     return this;
 
-def case_block():;
+function case_block() {
     // we assume here that there is at least one statement to parse;
-    s = symbol("statements")(token.get("line"), token.get("column"));
-    while (True) {
+    s = new symbol("statements")(token.get("line"), token.get("column"));
+    while (true) {
         if (token.id in ("case", "default", "}")) {
             break;
         s.childappend(statement());
@@ -1336,7 +1371,7 @@ symbol("switch").toJS = function () {
     // body;
     r.push('{');
     body = this.getChild("body");
-    for (var c in body.children)
+    body.children.forEach(function (c) {
         r.push(c.toJS());
     r.push('}');
     return r.join('');
@@ -1377,7 +1412,7 @@ symbol("default").toListG = function () {
 symbol("try"); symbol("catch"); symbol("finally");
 
 symbol("try"));
-def std():;
+function std() {
     this.childappend(block());
     if (token.id == "catch") {
         catch = token;
@@ -1389,10 +1424,10 @@ def std():;
 
         // insert "params" node, par. to function.pfix;
         assert token.id == "(";
-        params = symbol("params")(token.get("line"), token.get("column"));
+        params = new symbol("params")(token.get("line"), token.get("column"));
         catch.childappend(params);
         group = expression()  // group parsing as helper;
-        for (var c in group.children)
+        group.children.forEach(function (c) {
             params.childappend(c)  // to have params as parent of group's children;
 
         catch.childappend(block());
@@ -1428,7 +1463,7 @@ symbol("finally").toListG = toListG_self_first;
 symbol("throw");
 
 symbol("throw"));
-def std():;
+function std() {
     if (token.id not in ("eol",  ";")) {
         this.childappend(expression(0));
     //advance(";");
@@ -1443,7 +1478,7 @@ symbol("throw").toJS = function () {
 
 symbol("throw").toListG = toListG_self_first;
 
-def expression(bind_right=0):;
+function expression(bind_right=0) {
     global token;
     t = token;
     token = next();
@@ -1457,10 +1492,10 @@ def expression(bind_right=0):;
 
 symbol("label");
 
-def statement():;
+function statement() {
     // labeled statement;
     if ((token.type == "identifier" && tokenStream.peek(1).id == ") {") { // label;
-        s = symbol("label")(token.get("line"), token.get("column"));
+        s = new symbol("label")(token.get("line"), token.get("column"));
         s.attributes = token.attributes;
         advance();
         advance(":");
@@ -1468,7 +1503,7 @@ def statement():;
     // normal SourceElement;
     } else {
         n = token;
-        s = None ;
+        s = undefined ;
         // function declaration, doesn't need statementEnd;
         if (token.id == 'function' && tokenStream.peek(1).type == 'identifier') {
             advance();
@@ -1477,12 +1512,12 @@ def statement():;
                 advance();
         // statement;
         } else {
-            if (getattr(token, 'std', None)) {
+            if (getattr(token, 'std', undefined)) {
                 advance();
                 s = n.std();
-            elif token.id == ';': // empty statement;
-                s = symbol("(empty)")();
-            elif token.type != 'eol': // it's not an empty line;
+            else if (token.id == ';') { // empty statement;
+                s = new symbol("(empty)")();
+            else if (token.type != 'eol') { // it's not an empty line;
                 s = expression();
                 // Crockford's too tight here;
                 //if (not (s.id == "=" or s.id == "(")) {
@@ -1494,7 +1529,7 @@ def statement():;
                 // && a stock symbol(",", 0) that terminates every expression() parse, like for;
                 // arrays, maps, etc.).;
                 if (token.id == ',') {
-                    s1 = symbol("expressionList")(token.get("line"), token.get("column"));
+                    s1 = new symbol("expressionList")(token.get("line"), token.get("column"));
                     s1.childappend(s);
                     s = s1;
                     while (token.id == ',') {
@@ -1523,12 +1558,12 @@ symbol("label").toJS = function () {
 symbol("label").toListG = toListG_self_first;
 
 
-def statementEnd():;
+function statementEnd() {
     if (token.id in (";",)) {
         advance();
-    //elif token.id == "eof":;
+    //else if (token.id == "eof") {;
     //    return token  // ok as stmt end, but don't just skip it (bc. comments);
-    elif tokenStream.eolBefore:;
+    else if (tokenStream.eolBefore) {;
         pass // that's ok as statement end;
     //if token.id in ("eof", ;
     //    "eol", // these are not yielded by the TokenStream currently;
@@ -1549,15 +1584,15 @@ symbol("eof").toJS = function () {
 
 symbol("eof").toListG = toListG_self_first;
 
-def statementOrBlock(): // for 'if', 'while', etc. bodies;
+function statementOrBlock() {
     if (token.id == '{') {
         return block();
     } else {
         return statement();
 
-def statements():  // plural!;
-    s = symbol("statements")(token.get("line"), token.get("column"));
-    while (True) {
+function statements() {
+    s = new symbol("statements")(token.get("line"), token.get("column"));
+    while (true) {
         if (token.id == "}" or token.id == "eof") {
             if (token.id == "eof" && token.comments) {
                 s.childappend(token)  // keep eof for pot. comments;
@@ -1572,7 +1607,7 @@ def statements():  // plural!;
 
 symbol("statements").toJS = function () {
     r = [];
-    for (var cld in this.children)
+    this.children.forEach(function (cld) {
         c = cld.toJS();
         r.push(c);
         if (not c or c[-1] != ';') {
@@ -1582,9 +1617,9 @@ symbol("statements").toJS = function () {
 symbol("statements").toListG = toListG_just_children;
 
 
-def init_list():  // parse anything from "i" to "i, j=3, k,...";
+function init_list() {
     lst = [];
-    while (True) {
+    while (true) {
         if (token.id != "identifier") {
             break;
         elem = expression();
@@ -1596,7 +1631,7 @@ def init_list():  // parse anything from "i" to "i, j=3, k,...";
     return lst;
 
 // next is not used!;
-def argument_list(list):;
+function argument_list(list) {
     while (1) {
         if (token.id != "identifier") {
             throw new Error("Expected an argument name (pos %r)." % ((token.get("line"), token.get("column")),));
@@ -1606,7 +1641,7 @@ def argument_list(list):;
             advance();
             list.push(expression());
         } else {
-            list.push(None);
+            list.push(undefined);
         if (token.id != ",") {
             break;
         advance(",");
