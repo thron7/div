@@ -92,7 +92,7 @@ function symbol(name, bpleft) {
       }
   } else {
       cls = function () {
-          Node.callarguments);  
+          Node.call(this, arguments);  
       };
       cls.prototype = new Node();
       cls.type = name;
@@ -164,7 +164,7 @@ function infix(id_, bp) {
 function infix_v(id_, bp) {
     infix(id_, bp);  // make it a normal infix op;
 
-    function toJS) {  // adapt the output;
+    function toJS() {  // adapt the output;
         r = '';
         r += this.children[0].toJS();
         r += this.space();
@@ -182,7 +182,7 @@ function infix_v(id_, bp) {
 function infix_r(id_, bp) {
     infix(id_, bp);
 
-    function ifixleft) {
+    function ifix(left) {
         this.childappend(left);
         this.childappend(expression(bp-1));
         return this;
@@ -200,7 +200,7 @@ function prefix(id_, bp) {
     }
     symbol(id_, bp).pfix = pfix;
 
-    function toJS) {
+    function toJS() {
         r = '';
         r += this.get("value");
         r += this.children[0].toJS();
@@ -223,7 +223,7 @@ function prefix(id_, bp) {
 function prefix_v(id_, bp) {
     prefix(id_, bp);  // init as prefix op;
 
-    function toJS) {
+    function toJS() {
         r = '';
         r += this.get("value");
         r += this.space();
@@ -244,7 +244,7 @@ function preinfix(id_, bp) {  // pre-/infix operators (+, -);
     }
     symbol(id_).pfix = pfix;
 
-    function toJS) {  // need to handle pre/infix cases;
+    function toJS() {  // need to handle pre/infix cases;
         r = [];
         first = this.children[0].toJS();
         op = this.get("value");
@@ -317,11 +317,11 @@ function prepostfix(id_, bp) {  // pre-/post-fix operators (++, --);
 }
 
 
-function advance(id_=undefined) {
+function advance(id_) {
     id_ = id_ || null;
     var t = token;
     if (id_ && token.id != id_)
-        throw new Error("Syntax error: Expected %r (pos %r)" % (id_, (token.get("line"),token.get("column"))));
+        throw new Error("Syntax error: Expected %r (pos %r)" + id_ + token.get("line") + token.get("column"));
     if (token.id != "eof")
         token = next();
     return t;
@@ -389,7 +389,7 @@ symbol("eof");
 symbol("constant").toJS = function () {
    r = '';
    if (this.get("constantType") == "string") {
-        quote = "'" if this.get("detail")=="singlequotes" else '"';
+        quote = this.get("detail")=="singlequotes" ? "'"  : '"';
         r += quote + this.write(this.get("value")) + quote;
     } else {
         r += this.write(this.get("value"));
@@ -478,7 +478,7 @@ symbol("?").toJS = function () {
 
 symbol(".").ifix = function (left) {
     if (token.id != "identifier") {
-        throw new Error("Expected an attribute name (pos %r)." % ((token.get("line"), token.get("column")),));
+        throw new Error("Expected an attribute name (pos %r).");
     }
     accessor = new symbol("dotaccessor")(token.get("line"), token.get("column"));
     accessor.childappend(left);
@@ -509,8 +509,8 @@ symbol("dotaccessor").toJS = function () {
 ////;
 // walk down to find the "left-most" identifier ('a' in 'a.b().c');
 symbol("dotaccessor").getLeftmostOperand = function () {
-    ident = this.children[0];
-    while (ident.type !in ("identifier", "constant")) {  // e.g. 'dotaccessor', 'first', 'call', 'accessor', ...;
+    var ident = this.children[0];
+    while (!(ident.type in ["identifier", "constant"])) {  // e.g. 'dotaccessor', 'first', 'call', 'accessor', ...;
         ident =ident.children[0];
     }
     return ident;
@@ -519,14 +519,14 @@ symbol("dotaccessor").getLeftmostOperand = function () {
 ////;
 // walk down to find the "right-most" identifier ('c' in a.b.c);
 symbol("dotaccessor").getRightmostOperand = function () {
-    ident = this.children[1];
+    var ident = this.children[1];
     return ident // "left-leaning" syntax tree (. (. a b) c);
 }
 
 // constants;
 
 function constant(id_) {
-    symbol(id_));
+    symbol(id_);
     symbol("constant").pfix = function () {
         this.id = "constant";
         this.value = id_;
@@ -543,7 +543,7 @@ constant("false");
 
 symbol("("), symbol(")"), symbol("arguments");
 
-symbol("(")).ifix = function (left) {  // <call
+symbol("(").ifix = function (left) {  // <call
     call = new symbol("call")(token.get("line"), token.get("column"));
     // operand;
     operand = new symbol("operand")(token.get("line"), token.get("column"));
@@ -574,7 +574,7 @@ symbol("operand").toJS = function () {
 */
 
 
-symbol("(")).pfix = function () {  // <group
+symbol("(").pfix = function () {  // <group
     // There is sometimes a one-to-one replacement of the symbol instance from;
     // <token> && a different symbol created in the parsing method (here;
     // "symbol-(" vs. "symbol-group"). But there are a lot of attributes you want to;
@@ -641,7 +641,7 @@ symbol("[").ifix = function (left) {             // "foo[0]", "foo[bar]", "foo['
     return accessor;
 }
 
-symbol("["))             // arrays, "[1, 2, 3].pfix = function () {
+symbol("[").pfix = function () {             // arrays, "[1, 2, 3]
     arr = new symbol("array")();
     ////this.patch(arr);
     is_after_comma = 0;
@@ -722,7 +722,7 @@ symbol("key").toJS = function () {
 
 symbol("}");
 
-symbol("{"))                    // object literal.pfix = function () {
+symbol("{").pfix = function () {                    // object literal
     mmap = new symbol("map")();
     //this.patch(mmap);
     if (token.id != "}") {
@@ -730,7 +730,7 @@ symbol("{"))                    // object literal.pfix = function () {
         while (true) {
             if (token.id == "}") {
                 if (is_after_comma) {  // prevent dangling comma '...,}' (bug//6210);
-                    throw new Error("Illegal dangling comma in map (pos %r)" % ((token.get("line"),token.get("column")),));
+                    throw new Error("Illegal dangling comma in map (pos %r)");
                 break;
             }
             is_after_comma = 0;
@@ -747,7 +747,7 @@ symbol("{"))                    // object literal.pfix = function () {
             // the <keyname> node is !entered into the ast, but resolved into <keyvalue>;
             map_item.set("key", keyname.get("value"));
             quote_type = keyname.get("detail", false);
-            map_item.set("quote", quote_type if quote_type else '');
+            map_item.set("quote", quote_type ? quote_type : '');
             map_item.comments = keyname.comments;
             advance(":");
             // value;
@@ -767,7 +767,7 @@ symbol("{"))                    // object literal.pfix = function () {
     return mmap;
 }
 
-symbol("{")).std = function () {                    // blocks;
+symbol("{").std = function () {                    // blocks;
     a = statements();
     advance("}");
     return a;
@@ -810,13 +810,13 @@ symbol("keyvalue").toJS = function () {
     key = this.get("key");
     key_quote = this.get("quote", '');
     if (key_quote) {
-        quote = '"' if key_quote == 'doublequotes' else "'";
+        quote = key_quote == 'doublequotes' ? '"' : "'";
     } else if  ( key in lang.RESERVED 
            || !identifier_regex.match(key)
            // TODO: || !lang.NUMBER_REGEXP.match(key);
          ) 
     {
-        print "Warning: Auto protect key: %r" % key;
+        console.log( "Warning: Auto protect key: " + key);
         quote = '"';
     } else {
         quote = '';
@@ -962,7 +962,7 @@ symbol("var").pfix = function () {
         this.childappend(defn);
         n = token;
         if (n.id != "identifier") {
-            throw new Error("Expected a new variable name (pos %r)" % ((token.get("line"), token.get("column")),));
+            throw new Error("Expected a new variable name (pos %r)" );
         }
         advance();
         // initialization;
@@ -1015,8 +1015,7 @@ symbol("definition").toJS = function () {
 ////;
 // returns the identifier node of the util.defined symbol;
 //;
-symbol("definition"));
-function getDefinee() {
+symbol("definition").getDefinee = function () {
     dfn = this.children[0]  // (definition (identifier a)) or (definition (assignment (identifier a)(const 3)));
     if (dfn.type == "identifier") {
         return dfn;
@@ -1030,8 +1029,7 @@ function getDefinee() {
 ////;
 // returns the initialization of the util.defined symbol, if any;
 //;
-symbol("definition"));
-function getInitialization() {
+symbol("definition").getInitialization = function () {
     dfn = this.children[0];
     if (dfn.type == "assignment") {
         return dfn.children[1];
@@ -1042,7 +1040,7 @@ function getInitialization() {
 
 symbol("for"); symbol("in");
 
-symbol("for")).std = function () {
+symbol("for").std = function () {
     this.type = "loop" // compat with Node.type;
     this.set("loopType", "FOR");
     ;
@@ -1068,7 +1066,7 @@ symbol("for")).std = function () {
         // init part;
         first = new symbol("first")(token.get("line"), token.get("column"));
         condition.childappend(first);
-        if (chunk is undefined) {       // empty init expr;
+        if (undef(chunk)) {       // empty init expr;
             ;
         } else { // at least one init expr;
             exprList = new symbol("expressionList")(token.get("line"), token.get("column"));
@@ -1178,7 +1176,7 @@ symbol("in").toJS = function () {  // of 'for (in);
 */
 
 
-symbol("expressionList").toJS:  // WARN = function () { this conflicts (and is overwritten) in for(;;).toJS;
+symbol("expressionList").toJS = function () {   // WARN: this conflicts (and is overwritten) in for(;;).toJS;
     r = [];
     this.children.forEach(function (c) {
         r.push(c.toJS());
@@ -1417,7 +1415,7 @@ symbol("loop").toJS = function () {
         r += this.space(false,result=r);
 
     } else {
-        print "Warning: Unknown loop type: %s" % loopType;
+        console.log( "Warning: Unknown loop type: " + loopType);
     return r;
 }
 
@@ -1502,7 +1500,7 @@ symbol("return").toJS = function () {
 */
 
 
-symbol("new"))  // need to treat 'new' explicitly, for the awkward 'new Foo()' "call" synta.pfix = function () {
+symbol("new").pfix = function () { // need to treat 'new' explicitly, for the awkward 'new Foo()' "call" synta
     arg = expression(this.bind_left-1)  // first, parse a normal expression (this excludes '()');
     if (token.id == '(') {  // if the next token indicates a call;
         t = token;
@@ -1526,7 +1524,8 @@ symbol("switch").std = function () {
     body = new symbol("body")(token.get("line"), token.get("column"));
     this.childappend(body);
     while (true) {
-        if (token.id == "}") { break;
+        if (token.id == "}") { 
+            break;
         } else if (token.id == "case") {
             case_ = token  // make 'case' the root node (instead e.g. ':');
             advance("case");
@@ -1541,7 +1540,7 @@ symbol("switch").std = function () {
             case_ = token;
             advance("default");
             advance(":");
-            if (token.id in ("case",) ) { // fall-through;
+            if (token.id in ["case"] ) { // fall-through;
                 ;
             } else {
                 case_.childappend(case_block());
@@ -1557,7 +1556,7 @@ function case_block() {
     // we assume here that there is at least one statement to parse;
     s = new symbol("statements")(token.get("line"), token.get("column"));
     while (true) {
-        if (token.id in ("case", "default", "}")) {
+        if (token.id in ["case", "default", "}"]) {
             break;
         }
         s.childappend(statement());
@@ -1648,11 +1647,13 @@ symbol("try").std = function () {
         });
 
         catch_.childappend(block());
+    }
     if (token.id == "finally") {
         finally_ = token;
         advance("finally");
         this.childappend(finally_);
         finally_.childappend(block());
+    }
     return this;
 }
 
@@ -1667,10 +1668,12 @@ symbol("try").toJS = function () {
         r.push(catch_.children[0].toJS());
         //r.push(')');
         r.push(catch_.children[1].toJS());
+    }
     finally_ = this.getChild("finally", 0);
     if (finally_) {
         r.push('finally');
         r.push(finally_.children[0].toJS());
+    }
     return r.join('');
 }
 
@@ -1682,7 +1685,7 @@ symbol("try").toJS = function () {
 symbol("throw");
 
 symbol("throw").std = function () {
-    if (token.id !in ("eol",  ";")) {
+    if (!(token.id in ["eol",  ";"])) {
         this.childappend(expression(0));
     }
     //advance(";");
@@ -1701,9 +1704,9 @@ symbol("throw").toJS = function () {
 
 symbol("label");
 
-function statement() {
+function statement () {
     // labeled statement;
-    if ((token.type == "identifier" && tokenStream.peek(1).id == ") {") { // label;
+    if (token.type == "identifier" && tokenStream.peek(1).id == ":") { // label;
         s = new symbol("label")(token.get("line"), token.get("column"));
         s.attributes = token.attributes;
         advance();
@@ -1778,7 +1781,7 @@ symbol("label").toJS = function () {
 
 
 function statementEnd() {
-    if (token.id in (";",)) {
+    if (token.id in [";"]) {
         advance();
     //else if (token.id == "eof") {
     //    return token  // ok as stmt end, but don't just skip it (bc. comments);
@@ -1870,7 +1873,7 @@ function init_list() {
 function argument_list(list) {
     while (1) {
         if (token.id != "identifier") {
-            throw new Error("Expected an argument name (pos %r)." % ((token.get("line"), token.get("column")),));
+            throw new Error("Expected an argument name (pos %r).");
         }
         list.push(token);
         advance();
