@@ -38,6 +38,33 @@ function Node(line, column) {
   };
 
   this.write = function(s) {return s;}
+
+  this.getChild = function(spec, mandatory) {
+    for (var i in this.children) {
+        if (i===spec || this.children[i].type===spec)
+            return this.children[i];
+        if (defined(mandatory))
+            throw new Error("Node " + this.type + " has no child with type or position '" + spec + "'");
+    }
+  };
+
+  this.getPreviousSibling = function (mandatory, ignoreComments) {
+    if (this.parent) {
+        var prev;
+        for (var i in this.parent.children) {
+            var child = this.parent.children[i];
+            if (child === this) {
+                if (defined(prev))
+                    return prev;
+                else
+                    break;
+            }
+            prev = child;
+        }
+        if (defined(mandatory))
+            throw new Error("Node " + this.type + " has no previous sibling");
+    }
+  }
 }
 
 function TokenStream(arr) {
