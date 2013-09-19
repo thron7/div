@@ -5,6 +5,9 @@ var Scanner = require('./Scanner');
 var _ = require('underscore');
 var util = require('./util');
 
+var defined = util.defined;
+var undef = util.undef;
+
 // TODO: remove this later
 Array.prototype.extend = function (lst) {
     lst.forEach(function (e) { this.push(e) });
@@ -73,7 +76,7 @@ function TokenStream(arr) {
 
     // next()
     this.next = function () { 
-        return this._data[this._i++];
+        return new Token(this._data[this._i++]);
     };
 
     // peek()
@@ -81,6 +84,99 @@ function TokenStream(arr) {
         j = j || 0;
         return this._data[this._i + j];
     }
+}
+
+/**
+ * mirror line tok:
+ *   [ 'ident', 'return', 1447, 6 ]
+ */
+function Token(tok) {
+  var t_id = tok[0];
+  var t_src = tok[1];
+  var t_idx = tok[2];
+  var t_len = tok[3];
+
+  if (t_id == 'white'){
+    ;
+  } else if (t_id == 'comment') {  // curr. not used
+      s = symbol_table.get(tok.name)()
+      s.set('connection', tok.connection)  # relates to preceding or subsequent code
+      s.set('begin', tok.begin)  # first non-white on line
+      s.set('end', tok.end)   # last non-white on line
+      s.set('detail', tok.detail)
+      s.set('multiline', tok.multiline)  # true/false
+      self.comments.append(s)         # keep comments in temp. store
+  elif tok.name == "eol":
+      self.line += 1                  # increase line count
+      #pass # don't yield this (yet)
+      s = symbol_table.get("eol")()
+
+  elif tok.name == "eof":
+      symbol = symbol_table.get("eof")
+      s = symbol()
+      s.value = ""
+  # 'operation' nodes
+  elif tok.detail in (
+      MULTI_TOKEN_OPERATORS
+      + MULTI_PROTECTED_OPERATORS
+      + SINGLE_RIGHT_OPERATORS
+      + SINGLE_LEFT_OPERATORS
+      + PREFIX_VERB_OPERATORS
+      ):
+      s = symbol_table[tok.value]()
+      s.type = "operation"
+      s.set('operator', tok.detail)
+  # 'assignment' nodes
+  elif tok.detail in ASSIGN_OPERATORS:
+      s = symbol_table[tok.value]()
+      s.type = "assignment"
+      s.set('operator', tok.detail)
+  # 'constant' nodes
+  elif tok.name in ('number', 'string', 'regexp'):
+      symbol = symbol_table["constant"]
+      s = symbol()
+      if tok.name == 'number':
+          s.set('constantType', 'number')
+          s.set('detail', tok.detail)
+      elif tok.name == 'string':
+          s.set('constantType', 'string')
+          s.set('detail', tok.detail)
+      elif tok.name == 'regexp':
+          s.set('constantType', 'regexp')
+  elif tok.name in ('reserved',) and tok.detail in ("TRUE", "FALSE", "NULL"):
+      symbol = symbol_table["constant"]
+      s = symbol()
+      if tok.detail in ("TRUE", "FALSE"):
+          s.set('constantType', 'boolean')
+      elif tok.detail == "NULL":
+          s.set('constantType', 'null')
+  elif tok.name in ('name', 'builtin'):
+      s = symbol_table["identifier"]()
+      # debug hook
+      if 0 and tok.value == "pydb":  # to activate, enter "pydb;" in JS code
+          import pydb; pydb.debugger()
+  else:
+      # TODO: token, reserved
+      # name or operator
+      if tok.value == "this":
+          # unfortunately, this comes as tok.name=='reserved' like operators
+          # re-labeling this as identifier
+          s = symbol_table["identifier"]()
+      else:
+          symbol = symbol_table.get(tok.value)
+          if symbol:
+              s = symbol()
+          else:
+              raise SyntaxException("Unknown operator %r (pos %r)" % (tok.value, (tok.line,tok.column)))
+              #s = symbol_table['(unknown)']()
+
+
+  token = symbol_table[t_id]();
+  token.set('value', t_src);
+  token.set('column', t_idx);  // TODO: these are just indices
+  token.set('line', t_idx + t_len); // -"-
+
+  return token;
 }
 
 var symbol_table = {};
@@ -731,6 +827,7 @@ symbol("{").pfix = function () {                    // object literal
             if (token.id == "}") {
                 if (is_after_comma) {  // prevent dangling comma '...,}' (bug//6210);
                     throw new Error("Illegal dangling comma in map (pos %r)");
+                }
                 break;
             }
             is_after_comma = 0;
@@ -763,6 +860,7 @@ symbol("{").pfix = function () {                    // object literal
                 advance(",");
             }
         }
+    }
     advance("}");
     return mmap;
 }
@@ -1043,7 +1141,7 @@ symbol("for"); symbol("in");
 symbol("for").std = function () {
     this.type = "loop" // compat with Node.type;
     this.set("loopType", "FOR");
-    ;
+
     // condition;
     advance("(");
     // try to consume the first part of a (pot. longer) condition;
@@ -1416,6 +1514,7 @@ symbol("loop").toJS = function () {
 
     } else {
         console.log( "Warning: Unknown loop type: " + loopType);
+    }
     return r;
 }
 
@@ -1902,6 +2001,7 @@ function parse(tokenStream_) {
 function main(fcont) {
   var s = new Scanner();
   var tokens = s.tokenize_1(fcont);
+  //tokens.forEach(function(e){console.log(e)});
   var tokenStream = new TokenStream(tokens);
   var tree = parse(tokenStream)
   console.log(tree.toJS());
@@ -1913,4 +2013,3 @@ fs.readFile(process.argv[2], 'utf8', function(err, data) {
   }
   main(data);
 });
-
