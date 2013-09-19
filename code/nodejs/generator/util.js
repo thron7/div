@@ -1,15 +1,21 @@
+function first(a) {
+  return a[0];
+}
+
+function defined(x) {
+    return !undef(x);
+}
+
+function undef(x) {
+  return (typeof(x) == 'undefined');
+}
+
 module.exports = {
     
-    first : function first(a) {
-      return a[0];
-    },
+    first : first,
 
-    defined : function defined(x) {
-        return !undef(x);
-    },
+    defined : defined,
 
-    undef : function undef(x) {
-      return (typeof(x) == 'undefined');
-    }
+    undef : undef,
 
 }
