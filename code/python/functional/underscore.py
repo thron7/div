@@ -46,6 +46,24 @@ def curry3(fun, arg3):
         return curry2_f
     return curry3_f
 
+# Curry_vargs - curry variadic functions
+# Exmpl:
+#   def g(*args): return sum(args)
+#   f = curry_vargs(g)
+#   f(1)(2)(3)(4,True)  => 10
+# Caveat: When you supply a wrong argument you have to re-curry the original function
+def curry_vargs(fun):
+	actual_args = [[]]
+	def f(a, force=False):
+		actual_args[0].append(a)
+		if force:
+			res = fun(*(actual_args[0]))
+			actual_args[0] = []
+			return res
+		else:
+			return f
+	return f
+
 
 # Pipeline - compose functions where one takes the return value of the previous
 # Returns immediately, so pot. wrap in a function over seed:
